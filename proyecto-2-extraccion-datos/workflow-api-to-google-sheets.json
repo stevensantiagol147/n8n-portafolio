@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Obtener datos de API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "method": "GET",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_DE_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "options": {},
+        "dataMode": "autoMapInputData"
+      }
+    }
+  ],
+  "connections": {
+    "Obtener datos de API": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
