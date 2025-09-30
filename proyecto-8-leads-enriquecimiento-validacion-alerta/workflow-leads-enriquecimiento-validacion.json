@@ -1,0 +1,194 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Recibir Lead (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-enriquecido",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Normalizar campos (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [420, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "email", "value": "{{$json.email}}" },
+            { "name": "company", "value": "{{$json.company}}" }
+          ]
+        },
+        "keepOnlySet": true
+      }
+    },
+    {
+      "id": "3",
+      "name": "Enriquecer con API externa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "parameters": {
+        "url": "https://api.clearbit.com/v2/combined/find?email={{$json.email}}",
+        "method": "GET",
+        "responseFormat": "json",
+        "authentication": "headerAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TU_CREDENCIAL_CLEARBIT",
+          "name": "Clearbit API"
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Combinar datos (Merge)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [780, 300],
+      "parameters": {
+        "mode": "mergeByIndex"
+      }
+    },
+    {
+      "id": "5",
+      "name": "Validar datos (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [960, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "{{$json.email}}", "operation": "isNotEmpty" },
+            { "value1": "{{$json.company}}", "operation": "isNotEmpty" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6",
+      "name": "Segmentar por industria (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1140, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "{{$json.industry}}", "operation": "equal", "value2": "tecnología" },
+            { "value1": "{{$json.industry}}", "operation": "equal", "value2": "salud" },
+            { "value1": "{{$json.industry}}", "operation": "equal", "value2": "educación" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7",
+      "name": "Segmentar por prioridad (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1320, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "{{$json.priority}}", "operation": "equal", "value2": "alta" },
+            { "value1": "{{$json.priority}}", "operation": "equal", "value2": "media" },
+            { "value1": "{{$json.priority}}", "operation": "equal", "value2": "baja" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [1500, 240],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "dataMode": "autoMapInputData"
+      }
+    },
+    {
+      "id": "9",
+      "name": "Guardar en Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [1500, 360],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "TU_ID_NOTION",
+        "propertiesUi": {
+          "propertyValues": [
+            { "property": "Nombre", "value": "{{$json.name}}" },
+            { "property": "Email", "value": "{{$json.email}}" },
+            { "property": "Industria", "value": "{{$json.industry}}" },
+            { "property": "Prioridad", "value": "{{$json.priority}}" }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "TU_CREDENCIAL_NOTION",
+          "name": "Notion Account"
+        }
+      }
+    },
+    {
+      "id": "10",
+      "name": "Enviar alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1500, 480],
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "TU_CHAT_ID",
+        "text": "Nuevo lead enriquecido: {{$json.name}} ({{$json.industry}}, {{$json.priority}})"
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "TU_CREDENCIAL_TELEGRAM",
+          "name": "Telegram Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Lead (Webhook)": {
+      "main": [[{ "node": "Normalizar campos (Set)", "type": "main", "index": 0 }]]
+    },
+    "Normalizar campos (Set)": {
+      "main": [[{ "node": "Enriquecer con API externa", "type": "main", "index": 0 }]]
+    },
+    "Enriquecer con API externa": {
+      "main": [[{ "node": "Combinar datos (Merge)", "type": "main", "index": 0 }]]
+    },
+    "Combinar datos (Merge)": {
+      "main": [[{ "node": "Validar datos (IF)", "type": "main", "index": 0 }]]
+    },
+    "Validar datos (IF)": {
+      "main": [null, [{ "node": "Segmentar por industria (IF)", "type": "main", "index": 0 }]]
+    },
+    "Segmentar por industria (IF)": {
+      "main": [null, [{ "node": "Segmentar por prioridad (IF)", "type": "main", "index": 0 }]]
+    },
+    "Segmentar por prioridad (IF)": {
+      "main": [null, [
+        { "node": "Guardar en Google Sheets", "type": "main", "index": 0 },
+        { "node": "Guardar en Notion", "type": "main", "index": 0 },
+        { "node": "Enviar alerta Telegram", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
