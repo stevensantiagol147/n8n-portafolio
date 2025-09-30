@@ -1,0 +1,181 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Recibir Lead (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nuevo-lead",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Validar datos (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "{{$json.email}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "{{$json.industry}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Segmentar por industria (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [760, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "{{$json.industry}}",
+              "operation": "equal",
+              "value2": "tecnología"
+            },
+            {
+              "value1": "{{$json.industry}}",
+              "operation": "equal",
+              "value2": "salud"
+            },
+            {
+              "value1": "{{$json.industry}}",
+              "operation": "equal",
+              "value2": "educación"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Segmentar por prioridad (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1020, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "{{$json.priority}}",
+              "operation": "equal",
+              "value2": "alta"
+            },
+            {
+              "value1": "{{$json.priority}}",
+              "operation": "equal",
+              "value2": "media"
+            },
+            {
+              "value1": "{{$json.priority}}",
+              "operation": "equal",
+              "value2": "baja"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [1280, 300],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_DE_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "options": {},
+        "dataMode": "autoMapInputData"
+      }
+    },
+    {
+      "id": "6",
+      "name": "Enviar alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1280, 500],
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "TU_CHAT_ID",
+        "text": "Nuevo lead de {{$json.industry}} con prioridad {{$json.priority}}: {{$json.name}} - {{$json.email}}"
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "TU_CREDENCIAL_TELEGRAM",
+          "name": "Telegram Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Lead (Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Validar datos (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar datos (IF)": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Segmentar por industria (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segmentar por industria (IF)": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Segmentar por prioridad (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segmentar por prioridad (IF)": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enviar alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
