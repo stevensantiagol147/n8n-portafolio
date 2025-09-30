@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Buscar negocios (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "url": "https://api.apify.com/v2/datasets/TU_DATASET_ID/items?token=TU_TOKEN",
+        "method": "GET",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_DE_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "options": {},
+        "dataMode": "defineBelow",
+        "keyValuePairsUi": {
+          "keyValuePairs": [
+            {
+              "key": "Nombre",
+              "value": "{{$json.title}}"
+            },
+            {
+              "key": "Teléfono",
+              "value": "{{$json.phone}}"
+            },
+            {
+              "key": "Email",
+              "value": "{{$json.email}}"
+            },
+            {
+              "key": "Dirección",
+              "value": "{{$json.address}}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Buscar negocios (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
