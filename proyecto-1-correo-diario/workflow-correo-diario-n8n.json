@@ -1,0 +1,45 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "custom",
+            "cronExpression": "0 9 * * *"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "fromEmail": "stevensantiagol147@gmail.com",
+        "toEmail": "stevensantiagol147@gmail.com",
+        "subject": "Recordatorio diario",
+        "text": "Hola, este es tu recordatorio diario enviado automáticamente por n8n."
+      }
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
