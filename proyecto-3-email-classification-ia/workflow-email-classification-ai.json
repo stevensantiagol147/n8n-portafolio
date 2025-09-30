@@ -1,0 +1,100 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Recibir correo",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "mailbox": "INBOX",
+        "downloadAttachments": false,
+        "options": {
+          "markAsRead": true
+        }
+      },
+      "credentials": {
+        "imap": {
+          "id": "TU_CREDENCIAL_IMAP",
+          "name": "IMAP Account"
+        }
+      }
+    },
+    {
+      "id": "2",
+      "name": "Clasificar con OpenAI",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "operation": "chat",
+        "chatMessagesUi": {
+          "chatMessages": [
+            {
+              "role": "user",
+              "message": "Clasifica este correo como soporte, ventas o spam:\n\n{{$json.text}}"
+            }
+          ]
+        },
+        "model": "gpt-3.5-turbo"
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "TU_CREDENCIAL_OPENAI",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [760, 300],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_DE_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "options": {},
+        "dataMode": "defineBelow",
+        "keyValuePairsUi": {
+          "keyValuePairs": [
+            {
+              "key": "Asunto",
+              "value": "{{$json.subject}}"
+            },
+            {
+              "key": "Clasificación",
+              "value": "{{$node[\"Clasificar con OpenAI\"].json[\"choices\"][0][\"message\"][\"content\"]}}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir correo": {
+      "main": [
+        [
+          {
+            "node": "Clasificar con OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar con OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
