@@ -1,0 +1,119 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Recibir Lead (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nuevo-lead",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Validar datos (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "{{$json.email}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "{{$json.phone}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Formatear datos (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [760, 300],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Nombre",
+              "value": "{{$json.name}}"
+            },
+            {
+              "name": "Correo",
+              "value": "{{$json.email}}"
+            },
+            {
+              "name": "Teléfono",
+              "value": "{{$json.phone}}"
+            },
+            {
+              "name": "Mensaje",
+              "value": "{{$json.message}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "TU_ID_DE_HOJA",
+        "range": "Sheet1!A1",
+        "valueInputMode": "RAW",
+        "options": {},
+        "dataMode": "autoMapInputData"
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Lead (Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Validar datos (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar datos (IF)": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Formatear datos (Set)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear datos (Set)": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
